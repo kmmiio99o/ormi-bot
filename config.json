@@ -1,0 +1,11 @@
+{
+    "token": "",
+    "prefix": ";",
+    "mod_role": "Moderator",
+    "admin_role": "Administrator",
+    "log_channel": "",
+    "deleted_log_channel_id": "",
+    "log_channel_id": "",
+    "welcome_message": "{member} Hello on the server!\nHave fun and use some fun channels!",
+    "welcome_channel_id": ""
+}
