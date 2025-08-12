@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "daily"   # Check every day
+      time: "00:00"        # Midnight UTC
+    ignore: []             # No ignored dependencies
+    open-pull-requests-limit: 30  # Allow up to 30 PRs simultaneously
+    cooldown:
+      default-days: 0      # No delay for patch/minor updates
+      semver-major-days: 0 # 0 days delay for major versions
+    allow:
+      - dependency-type: "all"
