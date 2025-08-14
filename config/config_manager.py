@@ -9,7 +9,7 @@ def load_config():
     if not config_path.exists():
         # Create default config if not exists
         default_config = {
-            "token": "YOUT_BOT_TOKEN",
+            "token": "YOUR_BOT_TOKEN",
             "default_prefix": ";",
             "owners": [],
             "database_path": "data/database"

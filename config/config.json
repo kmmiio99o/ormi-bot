@@ -2,5 +2,5 @@
   "token": "YOUR_BOT_TOKEN",
   "default_prefix": ";",
   "owners": [],
-  "database_path": "data/database",
+  "database_path": "data/database"
 }
