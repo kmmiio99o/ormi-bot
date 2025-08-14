@@ -2,6 +2,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from discord.ui import Select, View
+from typing import Optional
 import datetime
 import random
 import asyncio
@@ -51,6 +52,10 @@ class CategorySelect(Select):
             color=category_data['color'],
             timestamp=datetime.datetime.now(datetime.timezone.utc)
         )
+
+        # Set default title and description in case no specific category matches
+        title = f"❓ {category_name}"
+        description = category_data['description']
 
         # Category-specific animations and formatting
         if "Information" in category_name:
@@ -169,6 +174,9 @@ class CategorySelect(Select):
             )
 
         # Add cute footer based on category
+        # Set default footer text in case no specific category matches
+        footer_text = "✨ Discover something new! ✨"
+
         if "Information" in category_name:
             footer_text = "📚 Knowledge is power! Keep learning nyaa~"
         elif "Fun" in category_name:
@@ -193,15 +201,17 @@ class HelpView(View):
     def __init__(self, categories, current_category=None):
         super().__init__(timeout=180.0)  # 3 minute timeout
         self.categories = categories
+        self.message: Optional[discord.Message] = None
         self.current_category = current_category
-        self.message = None
 
     async def on_timeout(self):
         """Disable the view when it times out"""
         for item in self.children:
-            item.disabled = True
+            if isinstance(item, discord.ui.Select):
+                item.disabled = True
         try:
-            await self.message.edit(view=self)
+            if self.message:
+                await self.message.edit(view=self)
         except (discord.NotFound, discord.HTTPException):
             pass
 
@@ -227,10 +237,14 @@ class HelpCog(commands.Cog):
                 'description': '🔍 General information commands to learn about users and servers',
                 'color': 0x3498db,
                 'commands': [
-                    ('/userinfo [member]', 'Shows detailed information about a user', self.is_admin),
-                    ('/serverinfo', 'Displays comprehensive server statistics and details', self.is_admin),
-                    ('/ping', 'Shows bot latency and connection quality with animations', self.is_admin),
-                    ('/uptime', 'Shows how long the bot has been online with cute formatting', self.is_admin),
+                    ('/userinfo [member]', 'Shows detailed information about a user'),
+                    ('/serverinfo', 'Displays comprehensive server statistics and details'),
+                    ('/ping', 'Shows bot latency and connection quality with animations'),
+                    ('/uptime', 'Shows how long the bot has been online with cute formatting'),
+                    ('/avatar [member]', 'Shows user avatar with direct link'),
+                    ('/roleinfo <role>', 'Shows detailed information about a role'),
+                    ('/emojiinfo <emoji>', 'Shows emoji information (ID, creation date)'),
+                    ('/recentjoins', 'Shows recently joined members (last 10)'),
                 ]
             },
             '🎭 Fun': {
@@ -238,14 +252,14 @@ class HelpCog(commands.Cog):
                 'description': '🎉 Fun and entertainment commands to spice up your server',
                 'color': 0xFF6B6B,
                 'commands': [
-                    ('/rate <thing>', 'Rates something 1-10 with animated stars ✨', self.is_admin),
-                    ('/rps <rock|paper|scissors>', 'Play rock-paper-scissors with cute animations', self.is_admin),
-                    ('/8ball <question>', 'Ask the magic 8-ball a question with mystical responses', self.is_admin),
-                    ('/ascii <text>', 'Converts text to beautiful ASCII art', self.is_admin),
-                    ('/random [min] [max]', 'Generates random number with cute visualization', self.is_admin),
-                    ('/ship <user1> <user2>', 'Ship two users together with compatibility percentage', self.is_admin),
-                    ('/howgay <user>', 'Measures gay percentage with fun meter animation', self.is_admin),
-                    ('/simprate <user>', 'Checks how much a user simps with cute rating', self.is_admin),
+                    ('/rate <thing>', 'Rates something 1-10 with animated stars ✨'),
+                    ('/rps <rock|paper|scissors>', 'Play rock-paper-scissors with cute animations'),
+                    ('/8ball <question>', 'Ask the magic 8-ball a question with mystical responses'),
+                    ('/ascii <text>', 'Converts text to beautiful ASCII art'),
+                    ('/random [min] [max]', 'Generates random number with cute visualization'),
+                    ('/ship <user1> <user2>', 'Ship two users together with compatibility percentage'),
+                    ('/howgay <user>', 'Measures gay percentage with fun meter animation'),
+                    ('/simprate <user>', 'Checks how much a user simps with cute rating'),
                 ]
             },
             '👮 Moderation': {
@@ -298,12 +312,12 @@ class HelpCog(commands.Cog):
                 'description': ' handy tools and utilities for everyday use',
                 'color': 0xF1C40F, # A suitable color, e.g., gold/yellow
                 'commands': [
-                    ('/afk [reason]', 'Sets your AFK status. The bot will notify users who mention you.', self.is_admin), # is_admin is a placeholder, adjust if needed
-                    ('/snipe', 'Shows the last deleted message in the current channel.', self.is_admin), # is_admin is a placeholder, adjust if needed
-                    ('/invite', 'Generates an invite link for the bot.', self.is_admin), # is_admin is a placeholder, adjust if needed
-                    ('/vote <question> <options>', 'Creates a poll. Separate options with | (e.g., Option1 | Option2).', self.is_admin), # is_admin is a placeholder, adjust if needed
-                    ('/lastfm <username>', 'Shows statistics for a Last.fm user.', self.is_admin), # is_admin is a placeholder, adjust if needed
-                    ('/color <color_input>', 'Shows a color sample. Use HEX (e.g., #FF5733) or name (e.g., red).', self.is_admin), # is_admin is a placeholder, adjust if needed
+                    ('/afk [reason]', 'Sets your AFK status. The bot will notify users who mention you.'),
+                    ('/snipe', 'Shows the last deleted message in the current channel.'),
+                    ('/invite', 'Generates an invite link for the bot.'),
+                    ('/vote <question> <options>', 'Creates a poll. Separate options with | (e.g., Option1 | Option2).'),
+                    ('/lastfm <username>', 'Shows statistics for a Last.fm user.'),
+                    ('/color <color_input>', 'Shows a color sample. Use HEX (e.g., #FF5733) or name (e.g., red).'),
                 ]
             },
         }
@@ -313,7 +327,7 @@ class HelpCog(commands.Cog):
         # The permission indicators will inform them what they need.
         visible_categories = {}
         is_owner = interaction.user.id in self.bot.config.get('owners', [])
-        is_admin = interaction.user.guild_permissions.administrator
+        is_admin = interaction.permissions.administrator
 
         # Iterate through categories and include ALL commands in each
         for category_name, category_data in categories.items():
@@ -340,7 +354,8 @@ class HelpCog(commands.Cog):
 
         # Add animated typing effect
         typing_dots = "." * ((int(datetime.datetime.now().timestamp()) % 3) + 1)
-        embed.description = embed.description.replace("...", typing_dots)
+        if embed.description is not None:
+            embed.description = embed.description.replace("...", typing_dots)
 
         # Add cute animated header
         cute_emojis = ["🌸", "🐾", "✨", "💫", "🎀", "🍭", "🧸", "🐇", "🦊", "🐻"]
@@ -399,18 +414,16 @@ class HelpCog(commands.Cog):
         await interaction.response.send_message(embed=embed, view=view, ephemeral=False)
 
         # Store the message reference for timeout handling
-        if interaction.response.is_done():
-            message = await interaction.original_response()
-            view.message = message
+        # Ensure 'message' is always defined for subsequent edits.
+        message = await interaction.original_response()
+        view.message = message
 
         # Add subtle animation effect after initial load
         await asyncio.sleep(1.5)
 
         try:
             # Update embed with a more complete message
-            embed.description = (
-                "Click the dropdown below to select a category nyaa~ 🐾\n\n"
-            )
+            embed.description = "Click the dropdown below to select a category nyaa~ 🐾\n\n"
 
             # Add a cute animated progress bar
             progress = "🟩" * 10  # Full progress since loading is done
@@ -421,32 +434,32 @@ class HelpCog(commands.Cog):
             )
 
             # Update the message
-            if interaction.response.is_done():
-                await message.edit(embed=embed, view=view)
+            # The original_response() call already ensures the response is done.
+            await message.edit(embed=embed, view=view)
         except (discord.NotFound, discord.HTTPException) as e:
             logger.error(f"Error updating help message: {e}")
 
     # Permission check methods (same as before)
     def has_kick_permission(self, interaction: discord.Interaction) -> bool:
-        return interaction.user.guild_permissions.kick_members
+        return interaction.permissions.kick_members
 
     def has_ban_permission(self, interaction: discord.Interaction) -> bool:
-        return interaction.user.guild_permissions.ban_members
+        return interaction.permissions.ban_members
 
     def has_moderate_members(self, interaction: discord.Interaction) -> bool:
-        return interaction.user.guild_permissions.moderate_members
+        return interaction.permissions.moderate_members
 
     def has_manage_messages(self, interaction: discord.Interaction) -> bool:
-        return interaction.user.guild_permissions.manage_messages
+        return interaction.permissions.manage_messages
 
     def has_manage_channels(self, interaction: discord.Interaction) -> bool:
-        return interaction.user.guild_permissions.manage_channels
+        return interaction.permissions.manage_channels
 
     def has_manage_nicknames(self, interaction: discord.Interaction) -> bool:
-        return interaction.user.guild_permissions.manage_nicknames
+        return interaction.permissions.manage_nicknames
 
     def is_admin(self, interaction: discord.Interaction) -> bool:
-        return interaction.user.guild_permissions.administrator
+        return interaction.permissions.administrator
 
     def is_owner(self, interaction: discord.Interaction) -> bool:
         return interaction.user.id in self.bot.config.get('owners', [])
