@@ -1,0 +1,13 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "00:00"
+    open-pull-requests-limit: 30
+    cooldown:
+      default-days: 1     # Minimum allowed delay
+      semver-major-days: 1  # Minimum for major versions
+    allow:
+      - dependency-type: "all"  # Include dev dependencies
