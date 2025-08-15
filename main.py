@@ -54,13 +54,14 @@ def is_admin():
 class MyBot(commands.Bot):
     def __init__(self):
         super().__init__(
-            command_prefix=commands.when_mentioned,
+            command_prefix="!",
             intents=intents,
             help_command=None
         )
         self.config = load_config()
         self.start_time = None
-        self.restricted_guild_id = self.config.get('restricted_guild_id')  # Get from config
+        self.restricted_guild_id = self.config.get('restricted_guild_id')
+        self._last_result = None
 
     async def setup_hook(self):
         """Initialize the bot"""

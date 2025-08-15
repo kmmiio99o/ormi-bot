@@ -15,12 +15,11 @@ class CategorySelect(Select):
         options = []
         for category_name, category_data in categories.items():
             # Add indicator if this is the current category
-            indicator = "✨ " if category_name == current_category else ""
+            indicator = "" if category_name == current_category else ""
             options.append(
                 discord.SelectOption(
-                    label=f"{category_data['emoji']} {indicator}{category_name.split(' ', 1)[1] if ' ' in category_name else category_name}",
+                    label=f"{indicator}{category_name.split(' ', 1)[1] if ' ' in category_name else category_name}",
                     description=category_data['description'],
-                    emoji=category_data['emoji'],
                     value=category_name
                 )
             )
@@ -62,7 +61,6 @@ class CategorySelect(Select):
             # Information category animation
             title = f"📚 {category_name}"
             description = f"{category_data['description']}\n\n" \
-                          f"🔍 *Gathering information...*"
 
             # Add typing animation
             typing_dots = "." * ((int(datetime.datetime.now().timestamp()) % 3) + 1)
@@ -78,11 +76,6 @@ class CategorySelect(Select):
             # Fun category animation
             title = f"🎭 {category_name}"
             description = f"{category_data['description']}\n\n" \
-                          f"🎉 *Loading fun activities...*"
-
-            # Add random fun emoji
-            fun_emojis = ["🎪", "🎡", "🎠", "🎲", "🎯", "🎳", "🎮"]
-            title = f"{random.choice(fun_emojis)} {category_name}"
 
             # Add spinning animation
             spinning_index = int(datetime.datetime.now().timestamp() * 2) % 8
@@ -95,12 +88,9 @@ class CategorySelect(Select):
             # Moderation category animation
             title = f"👮 {category_name}"
             description = f"{category_data['description']}\n\n" \
-                          f"🛡️ *Loading moderation tools...*"
 
             # Shield animation
-            shield_animation = ["🛡️", "🛡️✨", "✨🛡️", "✨🛡️✨"]
-            animation_index = int(datetime.datetime.now().timestamp() * 2) % len(shield_animation)
-            title = f"{shield_animation[animation_index]} {category_name}"
+            title = f"🛡️ {category_name}"
 
             # Add progress bar
             progress = int((datetime.datetime.now().timestamp() % 10) / 10 * 10)
@@ -113,7 +103,6 @@ class CategorySelect(Select):
             # Configuration category animation
             title = f"⚙️ {category_name}"
             description = f"{category_data['description']}\n\n" \
-                          f"🔧 *Setting up configuration...*"
 
             # Gear animation
             gear_emojis = ["⚙️", "⚙️🔧", "🔧⚙️", "🔧⚙️🔧"]
@@ -233,7 +222,6 @@ class HelpCog(commands.Cog):
         # --- NO CHANGES HERE: Categories and commands are defined as before ---
         categories = {
             'ℹ️ Information': {
-                'emoji': 'ℹ️',
                 'description': '🔍 General information commands to learn about users and servers',
                 'color': 0x3498db,
                 'commands': [
@@ -248,7 +236,6 @@ class HelpCog(commands.Cog):
                 ]
             },
             '🎭 Fun': {
-                'emoji': '🎭',
                 'description': '🎉 Fun and entertainment commands to spice up your server',
                 'color': 0xFF6B6B,
                 'commands': [
@@ -263,7 +250,6 @@ class HelpCog(commands.Cog):
                 ]
             },
             '👮 Moderation': {
-                'emoji': '👮',
                 'description': '🛡️ Powerful moderation tools to keep your server safe and organized',
                 'color': 0xE74C3C,
                 'commands': [
@@ -294,8 +280,7 @@ class HelpCog(commands.Cog):
                 ]
             },
             '⚙️ Configuration': {
-                'emoji': '⚙️',
-                'description': '🔧 Server configuration commands to customize your experience',
+                'description': '⚙️ Server configuration commands to customize your experience',
                 'color': 0x7289DA,
                 'commands': [
                     ('/prefix <prefix>', 'Changes the bot prefix for this server', self.is_admin),
@@ -308,8 +293,7 @@ class HelpCog(commands.Cog):
                 ]
             },
             '🛠️ Utilities': { # Or add these to '⚙️ Configuration'
-                'emoji': '🛠️', # Or use '⚙️'
-                'description': ' handy tools and utilities for everyday use',
+                'description': '🔧 handy tools and utilities for everyday use',
                 'color': 0xF1C40F, # A suitable color, e.g., gold/yellow
                 'commands': [
                     ('/afk [reason]', 'Sets your AFK status. The bot will notify users who mention you.'),
@@ -334,7 +318,6 @@ class HelpCog(commands.Cog):
             # Include the category with ALL its defined commands
             # No filtering based on interaction.user's permissions here
             visible_categories[category_name] = {
-                'emoji': category_data['emoji'],
                 'description': category_data['description'],
                 'color': category_data['color'],
                 'commands': category_data['commands'] # Show all commands
@@ -395,15 +378,6 @@ class HelpCog(commands.Cog):
             text=f"Requested by {interaction.user.display_name} ~ {datetime.datetime.now().strftime('%H:%M')}",
             icon_url=interaction.user.avatar.url if interaction.user.avatar else None
         )
-
-        # Set a random cute thumbnail
-        thumbnails = [
-            "https://cdn.discordapp.com/emojis/1026243190444474459.webp?size=96&quality=lossless",
-            "https://cdn.discordapp.com/emojis/1026243185895837716.webp?size=96&quality=lossless",
-            "https://cdn.discordapp.com/emojis/1026243181986291723.webp?size=96&quality=lossless",
-            "https://cdn.discordapp.com/emojis/1026243177785704458.webp?size=96&quality=lossless"
-        ]
-        embed.set_thumbnail(url=random.choice(thumbnails))
 
         # Create view with dropdown
         view = HelpView(visible_categories)

@@ -92,55 +92,72 @@ class UtilityCog(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         """Listener to handle AFK notifications and status removal."""
-        # Ignore bot messages and commands
         if message.author.bot or not message.guild:
             return
 
-        # 1. Check if the message author is AFK and remove AFK status
+        # 1. Check if message author is AFK
         author_id = str(message.author.id)
         guild_id = str(message.guild.id)
         was_afk = False
         afk_reason = None
+        afk_time = None
 
         if guild_id in self.afk_data and author_id in self.afk_data[guild_id]:
             was_afk = True
-            afk_reason = self.afk_data[guild_id][author_id].get("reason", "Not specified")
+            afk_info = self.afk_data[guild_id][author_id]
+            afk_reason = afk_info.get("reason", "Not specified")
+            afk_time = datetime.datetime.fromisoformat(afk_info["timestamp"])
             del self.afk_data[guild_id][author_id]
-            # If the guild dict is now empty, remove it too
+            
             if not self.afk_data[guild_id]:
                 del self.afk_data[guild_id]
-            # Save updated data
             save_afk_data(self.afk_data)
 
-        # 2. Check if any mentioned users are AFK
-        afk_mentions = []
+            # Send welcome back embed
+            welcome_embed = discord.Embed(
+                title="👋 Welcome Back!",
+                description=f"{message.author.mention}, I've removed your AFK status",
+                color=discord.Color.green()
+            )
+            welcome_embed.add_field(
+                name="You were AFK for",
+                value=discord.utils.format_dt(afk_time, "R"),
+                inline=True
+            )
+            if afk_reason != "Not specified":
+                welcome_embed.add_field(
+                    name="Your Reason",
+                    value=afk_reason,
+                    inline=False
+                )
+            await message.channel.send(embed=welcome_embed)
+
+        # 2. Check mentioned AFK users
         for user in message.mentions:
             user_id = str(user.id)
             if guild_id in self.afk_data and user_id in self.afk_data[guild_id]:
                 afk_info = self.afk_data[guild_id][user_id]
-                afk_mentions.append((user, afk_info.get("reason", "Not specified")))
-
-        # 3. Send notification messages
-        notification_content = ""
-        if was_afk:
-            notification_content += f"👋 Welcome back, {message.author.mention}! I've removed your AFK status.\n"
-
-        if afk_mentions:
-            for user, reason in afk_mentions:
-                # Get the time they went AFK
-                # (You could add this if stored in afk_info)
-                notification_content += f"💤 {user.mention} is currently AFK: {reason}\n"
-
-        if notification_content:
-            try:
-                # Send as a reply to the original message
-                await message.reply(notification_content, mention_author=False)
-            except discord.HTTPException:
-                # Fallback if reply fails (e.g., message deleted)
-                try:
-                    await message.channel.send(notification_content, reference=message, mention_author=False)
-                except discord.HTTPException:
-                    pass # Silently fail if sending notification also fails
+                afk_time = datetime.datetime.fromisoformat(afk_info["timestamp"])
+                reason = afk_info.get("reason", "Not specified")
+                
+                # Send AFK mention embed
+                mention_embed = discord.Embed(
+                    title="💤 AFK User Mentioned",
+                    description=f"{user.mention} is currently AFK",
+                    color=discord.Color.orange()
+                )
+                mention_embed.add_field(
+                    name="Reason",
+                    value=reason,
+                    inline=False
+                )
+                mention_embed.add_field(
+                    name="AFK Since", 
+                    value=discord.utils.format_dt(afk_time, "R"),
+                    inline=True
+                )
+                mention_embed.set_footer(text="They'll be notified of your mention when they return")
+                await message.channel.send(embed=mention_embed)
 
     # --- Snipe Command ---
     @app_commands.command(name="snipe", description="Shows the last deleted message in this channel.")
