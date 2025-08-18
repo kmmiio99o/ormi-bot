@@ -54,7 +54,7 @@ def is_admin():
 class MyBot(commands.Bot):
     def __init__(self):
         super().__init__(
-            command_prefix="!",
+            command_prefix=";",
             intents=intents,
             help_command=None
         )
@@ -92,24 +92,34 @@ class MyBot(commands.Bot):
         except Exception as e:
             logger.error(f'❌ Failed to sync commands: {e}', exc_info=True)
 
+    async def update_presence(self):
+        """Update the bot's presence based on server count."""
+        guild_count = len(self.guilds)
+        activity = discord.Activity(
+            type=discord.ActivityType.watching,
+            name=f"over {guild_count} servers | /help"
+        )
+        await self.change_presence(activity=activity)
+        logger.info(f"Presence updated to watching over {guild_count} servers.")
 
     async def on_ready(self):
         """When bot is ready"""
         if self.restricted_guild_id:
             logger.info(f'Bot is ready as {self.user} (ID: {self.user.id}) - RESTRICTED MODE (Guild ID: {self.restricted_guild_id})')
-            activity = discord.Activity(
-                type=discord.ActivityType.watching,
-                name=f"/help"
-            )
         else:
             logger.info(f'Bot is ready as {self.user} (ID: {self.user.id})')
-            activity = discord.Activity(
-                type=discord.ActivityType.listening,
-                name="/help"
-            )
 
-        await self.change_presence(activity=activity)
-        logger.info("Bot is fully online and ready!")
+        await self.update_presence()  # Call update_presence on ready
+    async def on_guild_join(self, guild):
+        """When bot joins a guild"""
+        logger.info(f"Bot joined guild: {guild.name} (ID: {guild.id})")
+        await self.update_presence()  # Update presence when joining a new guild
+
+    async def on_guild_remove(self, guild):
+        """When bot leaves a guild"""
+        logger.info(f"Bot left guild: {guild.name} (ID: {guild.id})")
+        await self.update_presence()  # Update presence when leaving a guild
+
 
 # --- Shutdown Handler ---
 async def shutdown(sig, loop):

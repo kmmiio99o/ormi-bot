@@ -2,5 +2,4 @@ discord.py
 pylast
 PyNaCl
 pyfiglet
-flask
 requests

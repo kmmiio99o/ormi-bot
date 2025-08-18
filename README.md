@@ -39,7 +39,7 @@ Welcome to **Omi Bot**, a community-driven, open-source Discord bot designed to 
 ### Installation
 1. Clone this repository:
    ```bash
-   git clone https://github.com/kmmiio99o/ormi-bot.git
+   git clone https://github.com/your-repo/ormi-bot.git
    ```
 2. Install dependencies:
    ```bash
@@ -48,7 +48,7 @@ Welcome to **Omi Bot**, a community-driven, open-source Discord bot designed to 
 3. Configure the bot by editing `config.json` with your bot token and other settings.
 4. Run the bot:
    ```bash
-   python main.py
+   python multibot.py
    ```
 
 ## 🤝 Join the Community

@@ -1,0 +1,4 @@
+config.json
+config_manager.py
+*.log
+__pycache__

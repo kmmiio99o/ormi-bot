@@ -1,13 +1,11 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
 version: 2
 updates:
-  - package-ecosystem: "pip"
-    directory: "/"
+  - package-ecosystem: "pip" # See documentation for possible values
+    directory: "/" # Location of package manifests
     schedule:
-      interval: "daily"
-      time: "00:00"
-    open-pull-requests-limit: 30
-    cooldown:
-      default-days: 1     # Minimum allowed delay
-      semver-major-days: 1  # Minimum for major versions
-    allow:
-      - dependency-type: "all"  # Include dev dependencies
+      interval: "weekly"

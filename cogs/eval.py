@@ -21,34 +21,34 @@ class Eval(commands.Cog):
             r'["\']password["\']\s*[:=]\s*["\'][^"\']*["\']',
             r'["\']secret["\']\s*[:=]\s*["\'][^"\']*["\']',
             r'["\']api_key["\']\s*[:=]\s*["\'][^"\']*["\']',
-            r'[A-Za-z0-9]{24}\.[A-Za-z0-9]{6}\.[A-Za-z0-9_\-]{27}',
-            r'[A-Za-z0-9]{32}',
+            r'[A-Za-z0-9]{24}\.[A-Za-z0-9]{6}\.[A-Za-z0-9_\-]{27}',  # Discord token pattern
+            r'[A-Za-z0-9]{32}',  # Common API key pattern
         ]
 
     def _filter_sensitive_content(self, content, filename=""):
         """Filter out sensitive information from content"""
         if not content:
             return content
-
+            
         # Always filter Discord tokens regardless of filename
         filtered_content = content
-
+        
         # Filter Discord tokens
         filtered_content = re.sub(
             r'[A-Za-z0-9]{24}\.[A-Za-z0-9]{6}\.[A-Za-z0-9_\-]{27}',
             '[TOKEN_REDACTED]',
             filtered_content
         )
-
+        
         # For config files, filter more aggressively
         if 'config' in filename.lower() or 'manager' in filename.lower():
-            for pattern in self.sensitive_patterns[:-2]:
+            for pattern in self.sensitive_patterns[:-2]:  # Exclude token patterns (already handled)
                 filtered_content = re.sub(
                     pattern,
                     lambda m: self._replace_with_redacted(m),
                     filtered_content
                 )
-
+        
         return filtered_content
 
     def _replace_with_redacted(self, match):
@@ -64,7 +64,7 @@ class Eval(commands.Cog):
         """Ensure file operations stay within project directory"""
         project_root = str(pathlib.Path(__file__).parent.parent.resolve())
         requested_path = str(pathlib.Path(path).resolve())
-
+        
         if not requested_path.startswith(project_root):
             raise ValueError("File operations restricted to project directory")
         return requested_path
@@ -72,7 +72,7 @@ class Eval(commands.Cog):
     def _find_file(self, filename):
         """Search for a file recursively in the project directory"""
         project_root = pathlib.Path(__file__).parent.parent.resolve()
-
+        
         # If it's already an absolute path within project
         try:
             full_path = pathlib.Path(filename).resolve()
@@ -80,13 +80,13 @@ class Eval(commands.Cog):
                 return str(full_path)
         except:
             pass
-
+        
         # Search recursively for the file
         for root, dirs, files in os.walk(project_root):
             for file in files:
                 if file == filename:
                     return os.path.join(root, file)
-
+        
         # If not found, return the direct path (will cause FileNotFoundError)
         return os.path.join(project_root, filename)
 
@@ -94,7 +94,7 @@ class Eval(commands.Cog):
         """Safe open function that filters content when reading"""
         validated_path = self._validate_file_path(path)
         filename = os.path.basename(validated_path)
-
+        
         # Create a wrapper class for file operations
         class FilteredFile:
             def __init__(self, file_obj, filename, filter_func):
@@ -102,46 +102,46 @@ class Eval(commands.Cog):
                 self._filename = filename
                 self._filter_func = filter_func
                 self.mode = file_obj.mode
-
+            
             def read(self, size=-1):
                 content = self._file.read(size)
                 if 'r' in self.mode:
                     return self._filter_func(content, self._filename)
                 return content
-
+            
             def readline(self, size=-1):
                 line = self._file.readline(size)
                 if 'r' in self.mode:
                     return self._filter_func(line, self._filename)
                 return line
-
+            
             def readlines(self, hint=-1):
                 lines = self._file.readlines(hint)
                 if 'r' in self.mode:
                     return [self._filter_func(line, self._filename) for line in lines]
                 return lines
-
+            
             def write(self, data):
                 return self._file.write(data)
-
+            
             def close(self):
                 return self._file.close()
-
+            
             def __enter__(self):
                 return self
-
+            
             def __exit__(self, exc_type, exc_val, exc_tb):
                 self._file.close()
-
+            
             def __iter__(self):
                 return self
-
+            
             def __next__(self):
                 line = next(self._file)
                 if 'r' in self.mode:
                     return self._filter_func(line, self._filename)
                 return line
-
+        
         original_file = open(validated_path, mode, **kwargs)
         if 'r' in mode:
             return FilteredFile(original_file, filename, self._filter_sensitive_content)
@@ -156,7 +156,7 @@ class Eval(commands.Cog):
             validated_path = self._validate_file_path(actual_path)
             with open(validated_path, 'r') as f:
                 content = f.read()
-
+            
             # Filter sensitive content
             filtered_content = self._filter_sensitive_content(content, filename)
             return filtered_content
@@ -206,30 +206,30 @@ class Eval(commands.Cog):
             # Try to find the file first
             actual_path = self._find_file(path)
             validated_path = self._validate_file_path(actual_path)
-
+            
             # Read existing content
             with open(validated_path, 'r') as f:
                 lines = f.readlines()
-
+            
             # Insert content at specified line (1-indexed)
             if line_number <= 0:
                 line_number = 1
             elif line_number > len(lines) + 1:
                 line_number = len(lines) + 1
-
+                
             # Split content into lines and insert
             content_lines = content.split('\n')
             if content_lines and content_lines[-1] == '':
-                content_lines.pop()
-
+                content_lines.pop()  # Remove trailing empty line from split
+            
             # Insert lines at the specified position
             for i, line in enumerate(content_lines):
                 lines.insert(line_number - 1 + i, line + ('\n' if i < len(content_lines) - 1 or content.endswith('\n') else ''))
-
+            
             # Write back to file
             with open(validated_path, 'w') as f:
                 f.writelines(lines)
-
+            
             return f"Successfully inserted content at line {line_number} in {path}"
         except Exception as e:
             return f"Error inserting at line: {str(e)}"
@@ -240,22 +240,22 @@ class Eval(commands.Cog):
             # Try to find the file first
             actual_path = self._find_file(path)
             validated_path = self._validate_file_path(actual_path)
-
+            
             # Read existing content
             with open(validated_path, 'r') as f:
                 lines = f.readlines()
-
+            
             # Check if line number is valid
             if line_number <= 0 or line_number > len(lines):
                 return f"Error: Line {line_number} is out of range (file has {len(lines)} lines)"
-
+            
             # Replace the line (1-indexed)
             lines[line_number - 1] = new_content + ('\n' if not new_content.endswith('\n') else '')
-
+            
             # Write back to file
             with open(validated_path, 'w') as f:
                 f.writelines(lines)
-
+            
             return f"Successfully replaced line {line_number} in {path}"
         except Exception as e:
             return f"Error replacing line: {str(e)}"
@@ -267,18 +267,18 @@ class Eval(commands.Cog):
             actual_path = self._find_file(path)
             filename = os.path.basename(actual_path)
             validated_path = self._validate_file_path(actual_path)
-
+            
             # Read existing content
             with open(validated_path, 'r') as f:
                 lines = f.readlines()
-
+            
             # Check if line number is valid
             if line_number <= 0 or line_number > len(lines):
                 return f"Error: Line {line_number} is out of range (file has {len(lines)} lines)"
-
+            
             # Get the line content (1-indexed)
             content = lines[line_number - 1]
-
+            
             # Filter sensitive content if needed
             filtered_content = self._filter_sensitive_content(content, filename)
             return filtered_content.rstrip('\n')
@@ -292,15 +292,15 @@ class Eval(commands.Cog):
             actual_path = self._find_file(path)
             filename = os.path.basename(actual_path)
             validated_path = self._validate_file_path(actual_path)
-
+            
             # Read existing content
             with open(validated_path, 'r') as f:
                 lines = f.readlines()
-
+            
             # Set end_line if not provided
             if end_line is None:
                 end_line = start_line
-
+            
             # Check if line numbers are valid
             if start_line <= 0 or start_line > len(lines):
                 return f"Error: Start line {start_line} is out of range (file has {len(lines)} lines)"
@@ -308,11 +308,11 @@ class Eval(commands.Cog):
                 return f"Error: End line {end_line} is out of range (file has {len(lines)} lines)"
             if start_line > end_line:
                 return f"Error: Start line {start_line} cannot be greater than end line {end_line}"
-
+            
             # Get the lines content (1-indexed)
             content_lines = lines[start_line - 1:end_line]
             content = ''.join(content_lines)
-
+            
             # Filter sensitive content if needed
             filtered_content = self._filter_sensitive_content(content, filename)
             return filtered_content.rstrip('\n')
@@ -330,7 +330,7 @@ class Eval(commands.Cog):
             )
             return await ctx.send(embed=embed)
 
-        if ctx.author.id != YOUR_ID:
+        if ctx.author.id != 879393496627306587:  # Replace with your ID
             embed = discord.Embed(
                 title="🚫 Permission Denied",
                 description="You don't have permission to use this command.",
@@ -360,7 +360,7 @@ class Eval(commands.Cog):
             "message": ctx.message,
             "_": self.bot._last_result,
             "os": os,
-            "open": self._safe_open,
+            "open": self._safe_open,  # Use safe open instead of regular open
             "__import__": __import__,
             "utils_logger": __import__("utils.logger") if utils_available else None,
             "utils_permissions": __import__("utils.permissions") if utils_available else None,
@@ -374,10 +374,11 @@ class Eval(commands.Cog):
             "get_lines": self._get_lines,
             "validate_path": self._validate_file_path,
             "asyncio": asyncio,
-            "print": lambda *args, **kwargs: print(*args, **kwargs)
+            "print": lambda *args, **kwargs: print(*args, **kwargs)  # Proper print function
         }
         env.update(globals())
 
+        # Remove code block formatting if present
         code = code.strip("` \n")
         if code.startswith("py"):
             code = code[2:]
@@ -419,15 +420,19 @@ class Eval(commands.Cog):
             except:
                 pass
 
+            # Handle return value properly
             result_str = ""
             if value:
                 result_str += value
-
+            
             if ret is not None:
                 self.bot._last_result = ret
+                
+                # Handle coroutines
                 if asyncio.iscoroutine(ret):
                     ret = await ret
-
+                
+                # Convert return value to string safely
                 try:
                     if isinstance(ret, str):
                         result_str += ret
