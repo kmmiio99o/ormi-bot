@@ -1,9 +1,4 @@
-# Hide configuration files
 config.json
 config_manager.py
-
-# Hide log files
 *.log
-
-# Hide Python cache directories
-__pycache__/
+__pycache__

@@ -50,6 +50,25 @@ def is_admin():
 # e.g., has_kick_permission, has_ban_permission, etc.
 # For brevity, let's assume they exist or are defined as needed.
 
+class Ping(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.author == self.bot.user:
+            return
+
+        if self.bot.user.mentioned_in(message):
+            cleaned_content = message.content.replace(f"<@!{self.bot.user.id}>", "").replace(f"<@{self.bot.user.id}>", "").strip()
+            if not cleaned_content:
+                embed = discord.Embed(
+                    title="Help Command",
+                    description="I do not support help command by pinging me directly. Please use the proper commands to interact with me.",
+                    color=discord.Color.blue()
+                )
+                await message.channel.send(embed=embed)
+
 # --- Bot Class ---
 class MyBot(commands.Bot):
     def __init__(self):
@@ -76,7 +95,15 @@ class MyBot(commands.Bot):
                     await self.load_extension(cog_name)
                     logger.info(f'✅ Loaded cog: {filename[:-3]}')
                 except Exception as e:
-                    logger.error(f'❌ Failed to load cog {filename}: {e}', exc_info=True) # Added exc_info for debugging
+                    logger.error(f'❌ Failed to load cog {filename}: {e}', exc_info=True)
+
+        # --- Add Ping cog directly ---
+        try:
+            ping_cog = Ping(self)
+            await self.add_cog(ping_cog)
+            logger.info('✅ Loaded cog: Ping')
+        except Exception as e:
+            logger.error(f'❌ Failed to load cog Ping: {e}', exc_info=True)
 
         # --- Sync commands ---
         logger.info("Syncing commands...")
@@ -118,7 +145,7 @@ class MyBot(commands.Bot):
     async def on_guild_remove(self, guild):
         """When bot leaves a guild"""
         logger.info(f"Bot left guild: {guild.name} (ID: {guild.id})")
-        await self.update_presence()  # Update presence when leaving a guild
+        await self.update_presence()  # Update presence when leaving a new guild
 
 
 # --- Shutdown Handler ---
