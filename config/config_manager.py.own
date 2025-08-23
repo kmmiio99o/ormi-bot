@@ -36,6 +36,7 @@ def load_guild_config(guild_id: int):
         default_config = {
             "prefix": "/",
             "log_channel_id": None,
+            "deleted_messages_channel_id": None,
             "welcome_channel_id": None,
             "welcome_message": "Welcome on the server, {member.display_name}!",
             "autorole": None
