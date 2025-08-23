@@ -2,3 +2,5 @@ config.json
 config_manager.py
 *.log
 __pycache__
+*.config
+*.zip
