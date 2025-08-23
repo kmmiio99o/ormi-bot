@@ -22,21 +22,6 @@ class ConfigCog(commands.Cog):
             ephemeral=True
         )
 
-    @app_commands.command(name="slc", description="Sets log channel")
-    @app_commands.checks.has_permissions(administrator=True)
-    @app_commands.describe(channel="The channel to set as log channel")
-    async def set_log_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
-        """Sets log channel"""
-        guild_id = interaction.guild.id
-        config = load_guild_config(guild_id)
-        config['log_channel_id'] = str(channel.id)
-        save_guild_config(guild_id, config)
-
-        await interaction.response.send_message(
-            f"✅ Log channel set to {channel.mention}",
-            ephemeral=True
-        )
-
     @app_commands.command(name="swc", description="Sets welcome channel")
     @app_commands.checks.has_permissions(administrator=True)
     @app_commands.describe(channel="The channel to set as welcome channel")

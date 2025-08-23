@@ -9,7 +9,7 @@ from discord import app_commands
 import asyncio
 import signal
 from utils.logger import setup_logger
-from config.config_manager import load_config
+from config.config_manager import load_config, load_guild_config, save_guild_config, delete_guild_config
 from utils.guild_join import send_configuration_guide
 
 # Initialize logger
@@ -19,6 +19,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 intents.presences = False
+intents.moderation = True
 
 # --- Permission Check Functions ---
 # These should ideally be in a separate utils/permissions.py file
@@ -141,6 +142,8 @@ class MyBot(commands.Bot):
     async def on_guild_join(self, guild):
         """When bot joins a guild"""
         logger.info(f"Bot joined guild: {guild.name} (ID: {guild.id})")
+        # Ensure a guild config is created/loaded
+        load_guild_config(guild.id)
         await self.update_presence()  # Update presence when joining a new guild
         # Send configuration guide
         await send_configuration_guide(guild)
@@ -148,6 +151,11 @@ class MyBot(commands.Bot):
     async def on_guild_remove(self, guild):
         """When bot leaves a guild"""
         logger.info(f"Bot left guild: {guild.name} (ID: {guild.id})")
+        # Delete the guild's configuration file
+        if delete_guild_config(guild.id):
+            logger.info(f"Deleted config for guild: {guild.name} (ID: {guild.id})")
+        else:
+            logger.warning(f"No config file found to delete for guild: {guild.name} (ID: {guild.id})")
         await self.update_presence()  # Update presence when leaving a new guild
 
 
