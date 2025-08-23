@@ -10,7 +10,6 @@ def load_config():
         # Create default config if not exists
         default_config = {
             "token": "YOUR_BOT_TOKEN",
-            "default_prefix": ";",
             "owners": [],
             "database_path": "data/database"
         }
