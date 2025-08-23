@@ -10,6 +10,7 @@ import asyncio
 import signal
 from utils.logger import setup_logger
 from config.config_manager import load_config
+from utils.guild_join import send_configuration_guide
 
 # Initialize logger
 logger = setup_logger()
@@ -141,6 +142,8 @@ class MyBot(commands.Bot):
         """When bot joins a guild"""
         logger.info(f"Bot joined guild: {guild.name} (ID: {guild.id})")
         await self.update_presence()  # Update presence when joining a new guild
+        # Send configuration guide
+        await send_configuration_guide(guild)
 
     async def on_guild_remove(self, guild):
         """When bot leaves a guild"""
